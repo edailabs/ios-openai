@@ -140,7 +140,13 @@ extension OpenAI {
                 do {
                     completion(.success(try decoder.decode(ResultType.self, from: data)))
                 } catch {
-                    completion(.failure((try? decoder.decode(APIErrorResponse.self, from: data)) ?? error))
+                    if let proxyError: ProxyErrorResponse = try? decoder.decode(ProxyErrorResponse.self, from: data) {
+                        completion(.failure(proxyError.fault.detail.asError))
+                    } else if let decoded = try? decoder.decode(APIErrorResponse.self, from: data) {
+                        completion(.failure(decoded))
+                    } else {
+                        completion(.failure(error))
+                    }
                 }
             }
             task.resume()
