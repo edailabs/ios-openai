@@ -192,7 +192,12 @@ extension OpenAI {
                     return completion(.failure(OpenAIError.emptyData))
                 }
                 
-                completion(.success(AudioSpeechResult(audio: data)))
+                if data.count < 200,
+                   let proxyError: ProxyErrorResponse = try? JSONDecoder().decode(ProxyErrorResponse.self, from: data) {
+                    completion(.failure(proxyError.fault.detail.asError))
+                } else {
+                    completion(.success(AudioSpeechResult(audio: data)))
+                }
             }
             task.resume()
         } catch {
