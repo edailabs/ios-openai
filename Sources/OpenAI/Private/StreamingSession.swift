@@ -29,6 +29,7 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
     }()
     
     private var previousChunkBuffer = ""
+    private var proxyError: ProxyError?
 
     init(urlRequest: URLRequest) {
         self.urlRequest = urlRequest
@@ -41,6 +42,11 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
     }
     
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard proxyError == nil
+        else {
+            onComplete?(self, proxyError!)
+            return
+        }
         onComplete?(self, error)
     }
     
@@ -85,7 +91,7 @@ extension StreamingSession {
                 onReceiveContent?(self, object)
             } catch {
                 if let proxyError: ProxyErrorResponse = try? decoder.decode(ProxyErrorResponse.self, from: jsonData) {
-                    onProcessingError?(self, proxyError.fault.detail.asError)
+                    self.proxyError = proxyError.fault.detail.asError
                 } else if let decoded = try? decoder.decode(APIErrorResponse.self, from: jsonData) {
                     onProcessingError?(self, decoded)
                 } else if index == jsonObjects.count - 1 {
