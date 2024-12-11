@@ -29,7 +29,7 @@ struct ProxyErrorResponse: Decodable {
 }
 
 // Models
-enum ProxyError: String, Error {
+public enum ProxyError: String, Error {
     case invalidToken = "steps.jwt.InvalidToken"
     case unkonwn
 }
