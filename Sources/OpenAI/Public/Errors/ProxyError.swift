@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  ProxyError.swift
 //  OpenAI
 //
 //  Created by Olivier on 10/12/2024.
@@ -7,7 +7,14 @@
 
 import Foundation
 
-struct ProxyErrorResponse: Decodable {
+struct ProxyErrorResponse: ErrorResponse {
+
+    public var error: ProxyError
+    public var errorDescription: String?
+
+}
+
+struct RawProxyErrorResponse: Decodable {
     
     // Attributes
     let fault: Fault
@@ -20,16 +27,20 @@ struct ProxyErrorResponse: Decodable {
     
     struct Detail: Decodable {
         let errorcode: String
-        
-        // Helpers
-        var asError: ProxyError {
-            .init(rawValue: errorcode) ?? .unkonwn
-        }
     }
+
+    func asProxyErrorResponse() -> ProxyErrorResponse {
+        let proxyError = ProxyError(rawValue: fault.detail.errorcode) ?? .unknown
+        return .init(
+            error: proxyError,
+            errorDescription: fault.faultstring
+        )
+    }
+
 }
 
 // Models
-public enum ProxyError: String, Error {
+public enum ProxyError: String, LocalizedError, Decodable {
     case invalidToken = "steps.jwt.InvalidToken"
-    case unkonwn
+    case unknown
 }
